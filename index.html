@@ -136,7 +136,8 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .clear-desc { font-size: 0.9rem; color: #bbb; text-align: left; line-height: 1.7; }
+        .clear-desc {
+    font-size: 2rem; color: #bbb; text-align: left; line-height: 1.7; }
     
 
 .loading-screen{
@@ -270,7 +271,7 @@
 <!-- 4. クリア画面 -->
 <div id="screen-clear" class="screen">
 
-    <h2 style="color:#ffeb3b; margin-bottom:15px;">
+    <h2 style="color:#ffeb3b; margin-bottom:15px; font-size:3rem;">
         光になった言葉
     </h2>
 
@@ -283,7 +284,7 @@
 
     </p>
 
-    <h3 style="color:#ffeb3b; margin-bottom:10px;">
+    <h3 style="color:#ffeb3b; margin-bottom:10px; font-size:2.5rem;">
         あなたたちが描いた作品
     </h3>
 
@@ -291,7 +292,7 @@
         <canvas id="result-canvas"></canvas>
     </div>
 
-    <p style="margin-top:20px; color:#bbb; text-align:center;">
+    <p style="margin-top:20px; color:#bbb; text-align:center; font-size:2rem;">
         これから読む『ことばは光』では、<br>
         「伝えること」と「伝わること」の意味を考えていきます。
     </p>
@@ -373,6 +374,15 @@ const firebaseConfig = {
     // 🕹️ ゲームの初期化と描画処理
     // ------------------------------------------
     function initGame() {
+        const themes = [,
+    "吉内",
+    "自転車",
+    "ドラゴン",
+    "犬",
+];
+
+const theme =
+    themes[Math.floor(Math.random() * themes.length)];
         canvas = document.getElementById('game-canvas');
         ctx = canvas.getContext('2d');
         resizeCanvas();
@@ -385,24 +395,28 @@ const firebaseConfig = {
             badge.innerText = "暗闇 (描く人)";
             badge.className = "status-badge status-drawer";
             status.innerText = "画面上には何も見えません。ペアに指示をもらいながらお題を描いてください。";
-            const themes = [
-    "ハート",
-    "星",
-    "花",
-    "魚",
-    "木"
-];
 
-const theme = themes[Math.floor(Math.random() * themes.length)];
+hintText.innerText =
+"ペアの指示を聞きながら描こう";
 
-hintText.innerText = `お題：【${theme}】を描いてみよう`;
             hintText.className = "game-hint drawer-hint";
-            document.getElementById('finish-btn').style.display = 'block'; // 描く側に終了ボタン
         } else {
+            document.getElementById('finish-btn').style.display = 'block';
             badge.innerText = "光 (見る人)";
             badge.className = "status-badge status-viewer";
             status.innerText = "相手が手探りで描いた軌跡が見えています。";
-            hintText.innerText = "「もう少し右！」「そこでストップ！」と声をかけてリードしてください。";
+            hintText.innerText =
+`お題：【${theme}】
+
+お題が相手にバレないように、
+
+「もう少し左カナ😅」
+「もう少し上‼️😡😡」
+
+などと声をかけて、
+
+二人で絵を完成させましょう。`;
+
             hintText.className = "game-hint viewer-hint";
         }
 
@@ -593,8 +607,14 @@ const onStart = (e) => {
         const statusRef = ref(db, `rooms/${roomNum}/status`);
         onValue(statusRef, (snapshot) => {
             if (snapshot.val() === 'finished') {
-                nextScreen('screen-game', 'screen-clear');
-            }
+
+    showFinalImage();
+
+    nextScreen(
+        'screen-game',
+        'screen-clear'
+    );
+}
         });
     }
 
@@ -624,30 +644,60 @@ const onStart = (e) => {
         }
     }
 
-function copyCanvasToResult() {
-    const resultCanvas = document.getElementById('result-canvas');
-    if (!resultCanvas) return;
+function showFinalImage() {
 
-    resultCanvas.width = canvas.width;
-    resultCanvas.height = canvas.height;
+    const imageRef =
+        ref(db, `rooms/${roomNum}/finalImage`);
 
-    const resultCtx = resultCanvas.getContext('2d');
-    resultCtx.fillStyle = "#000";
-    resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+    onValue(imageRef, (snapshot) => {
 
-    resultCtx.drawImage(canvas, 0, 0);
+        const imageData = snapshot.val();
+
+        if (!imageData) return;
+
+        const resultCanvas =
+            document.getElementById("result-canvas");
+
+        const resultCtx =
+            resultCanvas.getContext("2d");
+
+        const img = new Image();
+
+        img.onload = () => {
+
+            resultCanvas.width =
+                resultCanvas.parentElement.clientWidth;
+
+            resultCanvas.height =
+                resultCanvas.parentElement.clientHeight;
+
+            resultCtx.drawImage(
+                img,
+                0,
+                0,
+                resultCanvas.width,
+                resultCanvas.height
+            );
+        };
+
+        img.src = imageData;
+    });
 }
 
     // 完成ボタン
 window.finishGame = function() {
 
-    copyCanvasToResult();
+    const imageData = canvas.toDataURL("image/png");
 
-    if (isOnlineMode) {
-        set(ref(db, `rooms/${roomNum}/status`), 'finished');
-    } else {
-        nextScreen('screen-game', 'screen-clear');
-    }
+    set(
+        ref(db, `rooms/${roomNum}/finalImage`),
+        imageData
+    );
+
+    set(
+        ref(db, `rooms/${roomNum}/status`),
+        "finished"
+    );
 }
 
     // ------------------------------------------
