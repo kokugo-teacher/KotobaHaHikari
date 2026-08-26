@@ -167,36 +167,44 @@
             <span id="role-badge" class="status-badge">役割</span>
             <div id="game-status" style="margin-top: 5px; font-size: 0.9rem; color: #aaa;">ペア接続中...</div>
         </div>
-        <div class="canvas-container">
-            <canvas id="game-canvas"></canvas>
+        <div class="canvas-container" style="opacity:0.2;">
+            <canvas id="game-canvas" style="pointer-events:none;"></canvas>
             <div id="game-hint-text" class="game-hint">画面に触れて絵を描いてください</div>
         </div>
         <button class="btn" id="finish-btn" style="display:none;" onclick="finishGame()">描き終わった！ (完成へ)</button>
     </div>
 
     <!-- 4. 詩（クリア）画面 -->
-    <div id="screen-clear" class="screen">
-        <h2 style="color: #ffeb3b; margin-bottom: 15px;">完結する生命</h2>
-        <div class="poem-box">
-            生命は<br>
-            自分自身だけでは完結できないように<br>
-            つくられているらしい<br>
-            <br>
-            花も<br>
-            めしべとおしべが揃っているだけでは不充分で<br>
-            <span class="poem-highlight">虫や風が訪れて</span><br>
-            <span class="poem-highlight">めしべとおしべを仲立ちする</span><br>
-            <br>
-            生命は<br>
-            <span class="poem-highlight">その中に欠如を抱き</span><br>
-            <span class="poem-highlight">それを他者から満たしてもらうのだ</span>
-        </div>
-        <p class="clear-desc">
-            目も見えず、耳も聞こえない世界に閉じ込められた福島智さんを救ったのは、指先に触れて言葉を伝えてくれた「友」と、その「ことば（コミュニケーションの経験）」という光でした。<br>
-            <br>
-            <strong>不完全な私たちが、お互いを満たし合う。</strong><br>
-            さあ、これから福島さんの紡ぐ『ことばは光』を読んでいきましょう。
-        </p>
+<!-- 4. クリア画面 -->
+<div id="screen-clear" class="screen">
+
+    <h2 style="color:#ffeb3b; margin-bottom:15px;">
+        光になった言葉
+    </h2>
+
+    <p class="clear-desc" style="text-align:center; margin-bottom:20px;">
+        暗闇の中で描いた線は、
+        一人では形がわかりませんでした。<br><br>
+
+        けれど、横の人の言葉によって、
+        少しずつ形になっていきました。<br><br>
+
+    </p>
+
+    <h3 style="color:#ffeb3b; margin-bottom:10px;">
+        あなたたちが描いた作品
+    </h3>
+
+    <div class="canvas-container" style="height:300px;">
+        <canvas id="result-canvas"></canvas>
+    </div>
+
+    <p style="margin-top:20px; color:#bbb; text-align:center;">
+        これから読む『ことばは光』では、<br>
+        「伝えること」と「伝わること」の意味を考えていきます。
+    </p>
+
+</div>
     </div>
 
 </div>
@@ -225,6 +233,7 @@ const firebaseConfig = {
     let isOnlineMode = false;
     let roomNum = "";
     let myRole = ""; // 'drawer' or 'viewer'
+    let playerCount = 0;
     
     // Canvas & 描画関係
     let canvas, ctx;
@@ -284,7 +293,17 @@ const firebaseConfig = {
             badge.innerText = "暗闇 (描く人)";
             badge.className = "status-badge status-drawer";
             status.innerText = "画面上には何も見えません。ペアに指示をもらいながらお題を描いてください。";
-            hintText.innerText = "お題：【ハート】を描いてみよう";
+            const themes = [
+    "ハート",
+    "星",
+    "花",
+    "魚",
+    "木"
+];
+
+const theme = themes[Math.floor(Math.random() * themes.length)];
+
+hintText.innerText = `お題：【${theme}】を描いてみよう`;
             hintText.className = "game-hint drawer-hint";
             document.getElementById('finish-btn').style.display = 'block'; // 描く側に終了ボタン
         } else {
@@ -295,12 +314,60 @@ const firebaseConfig = {
             hintText.className = "game-hint viewer-hint";
         }
 
-        setupDrawEvents();
+setupDrawEvents();
 
-        if (isOnlineMode) {
-            listenForFirebaseDrawData();
-        }
-    }
+if (isOnlineMode) {
+
+    document.getElementById("game-status").innerText =
+        "もう一人が参加するのを待っています...";
+
+    registerPlayer();
+    listenForPlayerCount();
+    listenForFirebaseDrawData();
+}
+
+}
+
+function registerPlayer() {
+
+    const playerRef = ref(
+        db,
+        `rooms/${roomNum}/players/${Date.now()}`
+    );
+
+    set(playerRef, true);
+}
+
+function listenForPlayerCount() {
+
+    const playersRef = ref(
+        db,
+        `rooms/${roomNum}/players`
+    );
+
+    onValue(playersRef, (snapshot) => {
+
+        const players = snapshot.val() || {};
+
+        playerCount = Object.keys(players).length;
+
+        document.getElementById("game-status").innerText =
+            `参加者 ${playerCount}/2`;
+
+if(playerCount >= 2){
+
+    document.getElementById("game-status").innerText =
+        "ペア接続完了";
+
+    document
+        .querySelector(".canvas-container")
+        .style.opacity = "1";
+
+    document.getElementById("game-canvas")
+        .style.pointerEvents = "auto";
+}
+    });
+}
 
     function resizeCanvas() {
         const container = canvas.parentElement;
@@ -310,27 +377,39 @@ const firebaseConfig = {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 描画イベント設定（マウス＆タッチ対応）
-    function setupDrawEvents() {
-        const getPos = (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
-        };
+// 描画イベント設定（マウス＆タッチ対応）
+function setupDrawEvents() {
 
-        const onStart = (e) => {
-            if (myRole !== 'drawer') return; // 描く人だけがドラッグ可能
-            isDrawing = true;
-            const pos = getPos(e);
-            lastX = pos.x;
-            lastY = pos.y;
-            sendDrawData('start', pos.x, pos.y);
-            triggerRipple(pos.x, pos.y); // 描く側には波紋（触感）フィードバックだけを残す
+    const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
         };
+    };
+
+    const onStart = (e) => {
+
+    if (isOnlineMode && playerCount < 2) {
+        return;
+    }
+
+    if (myRole !== 'drawer') return;
+
+    isDrawing = true;
+
+    const pos = getPos(e);
+
+    lastX = pos.x;
+    lastY = pos.y;
+
+    sendDrawData('start', pos.x, pos.y);
+
+    triggerRipple(pos.x, pos.y);
+};
 
         const onMove = (e) => {
             if (!isDrawing || myRole !== 'drawer') return;
@@ -444,14 +523,31 @@ const firebaseConfig = {
         }
     }
 
+function copyCanvasToResult() {
+    const resultCanvas = document.getElementById('result-canvas');
+    if (!resultCanvas) return;
+
+    resultCanvas.width = canvas.width;
+    resultCanvas.height = canvas.height;
+
+    const resultCtx = resultCanvas.getContext('2d');
+    resultCtx.fillStyle = "#000";
+    resultCtx.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+
+    resultCtx.drawImage(canvas, 0, 0);
+}
+
     // 完成ボタン
-    window.finishGame = function() {
-        if (isOnlineMode) {
-            set(ref(db, `rooms/${roomNum}/status`), 'finished');
-        } else {
-            nextScreen('screen-game', 'screen-clear');
-        }
+window.finishGame = function() {
+
+    copyCanvasToResult();
+
+    if (isOnlineMode) {
+        set(ref(db, `rooms/${roomNum}/status`), 'finished');
+    } else {
+        nextScreen('screen-game', 'screen-clear');
     }
+}
 
     // ------------------------------------------
     // 💻 1台デモモード（画面を半分に割って隣を疑似体験）
@@ -465,7 +561,7 @@ const firebaseConfig = {
             <div class="demo-pane" style="background-color: #050505;">
                 <div class="status-badge status-drawer" style="align-self: flex-start;">暗闇（自分：描く側）</div>
                 <div style="font-size:0.85rem; color:#aaa; margin:10px 0;">画面をなぞってください。あなたの線は見えません。</div>
-                <div class="canvas-container">
+                <div class="canvas-container" style="opacity:0.2;">
                     <canvas id="canvas-drawer"></canvas>
                     <div class="game-hint drawer-hint">ここに【ハート】を描いて</div>
                 </div>
@@ -475,7 +571,7 @@ const firebaseConfig = {
             <div class="demo-pane" style="background-color: #111; border-left:2px solid #333;">
                 <div class="status-badge status-viewer" style="align-self: flex-start;">光（相手：見る側）</div>
                 <div style="font-size:0.85rem; color:#aaa; margin:10px 0;">左の画面で描かれた線が、リアルタイムに光となって見えます。</div>
-                <div class="canvas-container">
+                <div class="canvas-container" style="opacity:0.2;">
                     <canvas id="canvas-viewer"></canvas>
                 </div>
                 <div style="height: 55px;"></div>
