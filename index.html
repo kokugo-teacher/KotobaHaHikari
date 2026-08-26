@@ -19,14 +19,15 @@
             color: #ffffff;
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
             overflow: hidden;
+            font-size: 24px;
         }
         #app {
             display: flex;
             flex-direction: column;
             width: 100%;
             height: 100%;
-            max-width: 480px;
-            margin: 0 auto;
+            max-width: none;
+            margin: 0;
             position: relative;
         }
         .screen {
@@ -35,7 +36,7 @@
             width: 100%;
             height: 100%;
             justify-content: space-between;
-            padding: 20px;
+            padding: 5px;
             animation: fadeIn 0.4s ease-out forwards;
         }
         .screen.active {
@@ -48,11 +49,11 @@
 
         /* タイトル画面 */
         #screen-setup { justify-content: center; text-align: center; gap: 20px; }
-        .logo { font-size: 2.2rem; font-weight: bold; background: linear-gradient(135deg, #ffeb3b, #ff9800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .subtitle { font-size: 0.95rem; color: #aaa; line-height: 1.6; }
+        .logo { font-size: 4rem; font-weight: bold; background: linear-gradient(135deg, #ffeb3b, #ff9800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 1.8rem; color: #aaa; line-height: 1.6; }
         .btn {
             background: linear-gradient(135deg, #ff9800, #ff5722);
-            color: #fff; border: none; padding: 15px; font-size: 1.1rem;
+            color: #fff; border: none; padding: 25px; font-size: 2rem;
             font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer;
             box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); margin-top: 10px;
         }
@@ -61,7 +62,7 @@
         }
         .input-group { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
         input[type="number"] {
-            padding: 12px; font-size: 1.2rem; text-align: center;
+            padding: 20px; font-size: 2rem; text-align: center;
             border-radius: 8px; border: 1px solid #555; background: #1a1a1a; color: #fff;
         }
 
@@ -74,23 +75,34 @@
         .role-btn:active { transform: scale(0.98); }
         .role-btn.drawer { border-color: #ff5252; }
         .role-btn.viewer { border-color: #2196f3; }
-        .role-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
-        .role-desc { font-size: 0.85rem; color: #888; line-height: 1.5; }
+        .role-title { font-size: 3rem; font-weight: bold; margin-bottom: 10px; }
+        .role-desc { font-size: 1.5rem; color: #888; line-height: 1.5; }
 
         /* ゲームメイン画面 */
         .header { text-align: center; padding: 10px 0; }
         .status-badge {
-            display: inline-block; padding: 6px 14px; border-radius: 20px;
-            font-size: 0.85rem; font-weight: bold;
+            display: inline-block; padding: 12px 24px; border-radius: 20px;
+            font-size: 1.5rem; font-weight: bold;
         }
         .status-drawer { background-color: rgba(255, 82, 82, 0.2); color: #ff5252; }
         .status-viewer { background-color: rgba(33, 150, 243, 0.2); color: #2196f3; }
         
         .canvas-container {
-            position: relative; flex-grow: 1; background: #111;
-            border-radius: 16px; border: 1px solid #333; overflow: hidden;
-            display: flex; justify-content: center; align-items: center;
-        }
+    position: relative;
+    flex-grow: 1;
+
+    width: 100%;
+    height: 75vh;
+
+    background: #111;
+    border-radius: 16px;
+    border: 1px solid #333;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
         canvas { display: block; width: 100%; height: 100%; background: #000; }
         
         /* 1台デモモード用レイアウト */
@@ -108,8 +120,8 @@
             position: absolute; width: 90%; text-align: center; pointer-events: none;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8); line-height: 1.5;
         }
-        .drawer-hint { color: #ff5252; font-size: 1.1rem; font-weight: bold; }
-        .viewer-hint { color: #2196f3; font-size: 1.1rem; font-weight: bold; }
+        .drawer-hint { color: #ff5252; font-size: 2rem; font-weight: bold; }
+        .viewer-hint { color: #2196f3; font-size: 2rem; font-weight: bold; }
 
         /* 詩（クリア）画面 */
         #screen-clear { justify-content: center; align-items: center; text-align: center; }
@@ -125,6 +137,69 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .clear-desc { font-size: 0.9rem; color: #bbb; text-align: left; line-height: 1.7; }
+    
+
+.loading-screen{
+    position:absolute;
+    inset:0;
+    background:#0d0d0d;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.loading-circle{
+    width:240px;
+    height:240px;
+    border:14px solid rgba(255,255,255,0.1);
+    border-top:14px solid #ffeb3b;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    box-shadow:
+    0 0 20px rgba(255,235,59,0.4),
+    0 0 50px rgba(255,235,59,0.2);
+}
+
+.loading-icon{
+    font-size:4rem;
+    color:#ffeb3b;
+    animation:pulse 2s ease-in-out infinite;
+}
+
+.loading-text{
+    margin-top:30px;
+    font-size:3rem;
+    color:#ffeb3b;
+    font-weight:bold;
+    letter-spacing:3px;
+}
+
+.loading-sub{
+    margin-top:15px;
+    font-size:2rem;
+    color:#ccc;
+}
+
+@keyframes spin{
+    from{
+        transform:rotate(0deg);
+    }
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+@keyframes pulse{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.15);}
+    100%{transform:scale(1);}
+}
+
     </style>
 </head>
 <body>
@@ -163,6 +238,23 @@
 
     <!-- 3. ゲーム画面（描く側・見る側共通） -->
     <div id="screen-game" class="screen">
+
+        <div id="loading-screen" class="loading-screen" style="display:none;">
+
+    <div class="loading-circle">
+        <div class="loading-icon">✨</div>
+    </div>
+
+<div class="loading-text">
+    ペアを待っています
+</div>
+
+<div id="loading-status" class="loading-sub">
+    参加者 1/2
+</div>
+
+</div>
+
         <div class="header">
             <span id="role-badge" class="status-badge">役割</span>
             <div id="game-status" style="margin-top: 5px; font-size: 0.9rem; color: #aaa;">ペア接続中...</div>
@@ -318,8 +410,10 @@ setupDrawEvents();
 
 if (isOnlineMode) {
 
+    document.getElementById("loading-screen").style.display="flex";
+
     document.getElementById("game-status").innerText =
-        "もう一人が参加するのを待っています...";
+        "接続待機中";
 
     registerPlayer();
     listenForPlayerCount();
@@ -332,7 +426,7 @@ function registerPlayer() {
 
     const playerRef = ref(
         db,
-        `rooms/${roomNum}/players/${Date.now()}`
+        `rooms/${roomNum}/players/${myRole}`
     );
 
     set(playerRef, true);
@@ -351,10 +445,13 @@ function listenForPlayerCount() {
 
         playerCount = Object.keys(players).length;
 
-        document.getElementById("game-status").innerText =
-            `参加者 ${playerCount}/2`;
+document.getElementById("loading-status").innerText =
+    `参加者 ${playerCount}/2`;
 
 if(playerCount >= 2){
+
+    document.getElementById("loading-screen")
+    .style.display = "none";
 
     document.getElementById("game-status").innerText =
         "ペア接続完了";
