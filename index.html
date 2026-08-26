@@ -314,8 +314,8 @@ const firebaseConfig = {
     function setupDrawEvents() {
         const getPos = (e) => {
             const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches.clientX : e.clientX;
-            const clientY = e.touches ? e.touches.clientY : e.clientY;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             return {
                 x: clientX - rect.left,
                 y: clientY - rect.top
@@ -507,8 +507,8 @@ const firebaseConfig = {
 
         const getDemoPos = (e) => {
             const rect = cD.getBoundingClientRect();
-            const clientX = e.touches ? e.touches.clientX : e.clientX;
-            const clientY = e.touches ? e.touches.clientY : e.clientY;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             return { x: clientX - rect.left, y: clientY - rect.top };
         };
 
