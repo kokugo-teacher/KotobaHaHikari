@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ブラインド・スケッチ - Words of Light</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #0d0d0d;
+            color: #ffffff;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            overflow: hidden;
+        }
+        #app {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            justify-content: space-between;
+            padding: 20px;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .screen.active {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* タイトル画面 */
+        #screen-setup { justify-content: center; text-align: center; gap: 20px; }
+        .logo { font-size: 2.2rem; font-weight: bold; background: linear-gradient(135deg, #ffeb3b, #ff9800); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 0.95rem; color: #aaa; line-height: 1.6; }
+        .btn {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: #fff; border: none; padding: 15px; font-size: 1.1rem;
+            font-weight: bold; border-radius: 30px; width: 100%; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); margin-top: 10px;
+        }
+        .btn-secondary {
+            background: #222; border: 1px solid #555; color: #ccc;
+        }
+        .input-group { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; }
+        input[type="number"] {
+            padding: 12px; font-size: 1.2rem; text-align: center;
+            border-radius: 8px; border: 1px solid #555; background: #1a1a1a; color: #fff;
+        }
+
+        /* 役割選択画面 */
+        #screen-role { justify-content: center; text-align: center; gap: 30px; }
+        .role-btn {
+            padding: 30px 15px; border-radius: 16px; border: 2px solid #444;
+            background: #151515; cursor: pointer; transition: 0.2s;
+        }
+        .role-btn:active { transform: scale(0.98); }
+        .role-btn.drawer { border-color: #ff5252; }
+        .role-btn.viewer { border-color: #2196f3; }
+        .role-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; }
+        .role-desc { font-size: 0.85rem; color: #888; line-height: 1.5; }
+
+        /* ゲームメイン画面 */
+        .header { text-align: center; padding: 10px 0; }
+        .status-badge {
+            display: inline-block; padding: 6px 14px; border-radius: 20px;
+            font-size: 0.85rem; font-weight: bold;
+        }
+        .status-drawer { background-color: rgba(255, 82, 82, 0.2); color: #ff5252; }
+        .status-viewer { background-color: rgba(33, 150, 243, 0.2); color: #2196f3; }
+        
+        .canvas-container {
+            position: relative; flex-grow: 1; background: #111;
+            border-radius: 16px; border: 1px solid #333; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+        canvas { display: block; width: 100%; height: 100%; background: #000; }
+        
+        /* 1台デモモード用レイアウト */
+        .demo-layout {
+            display: flex; width: 100vw; height: 100vh; max-width: none !important;
+            flex-direction: row !important; background: #000;
+        }
+        .demo-pane {
+            width: 50%; height: 100%; border: 1px solid #333;
+            display: flex; flex-direction: column; justify-content: space-between; padding: 15px;
+        }
+
+        /* 案内・ヒント */
+        .game-hint {
+            position: absolute; width: 90%; text-align: center; pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); line-height: 1.5;
+        }
+        .drawer-hint { color: #ff5252; font-size: 1.1rem; font-weight: bold; }
+        .viewer-hint { color: #2196f3; font-size: 1.1rem; font-weight: bold; }
+
+        /* 詩（クリア）画面 */
+        #screen-clear { justify-content: center; align-items: center; text-align: center; }
+        .poem-box {
+            background: rgba(255, 255, 255, 0.04); border-radius: 16px;
+            padding: 30px 20px; line-height: 2.2; font-size: 1.15rem;
+            margin-bottom: 25px; border-left: 4px solid #ffeb3b; text-align: left;
+            animation: slideUp 1s ease-out forwards;
+        }
+        .poem-highlight { color: #ffeb3b; font-weight: bold; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .clear-desc { font-size: 0.9rem; color: #bbb; text-align: left; line-height: 1.7; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <!-- 1. セットアップ画面 -->
+    <div id="screen-setup" class="screen active">
+        <div class="logo">ブラインド・スケッチ</div>
+        <div class="subtitle">
+            お互いの「欠落」を補い合い、<br>
+            暗闇の中に言葉を浮かび上がらせる。
+        </div>
+        
+        <div class="input-group">
+            <label for="room-id" style="font-size:0.9rem; color:#888;">ペアで使用する3桁のルーム番号を入力：</label>
+            <input type="number" id="room-id" placeholder="例：123" min="100" max="999">
+        </div>
+
+        <button class="btn" onclick="startOnlineMode()">オンラインで開始</button>
+        <button class="btn btn-secondary" onclick="startDemoMode()">1台で試す（デモモード）</button>
+    </div>
+
+    <!-- 2. 役割選択画面 -->
+    <div id="screen-role" class="screen">
+        <h2>あなたの役割を選択してください</h2>
+        <div class="role-btn drawer" onclick="selectRole('drawer')">
+            <div class="role-title" style="color:#ff5252;">暗闇 (描く人)</div>
+            <div class="role-desc">画面は真っ暗です。自分の描いている線は見えません。相手の声を信じて指を動かしてください。</div>
+        </div>
+        <div class="role-btn viewer" onclick="selectRole('viewer')">
+            <div class="role-title" style="color:#2196f3;">光 (見る人)</div>
+            <div class="role-desc">相手の手の動きがリアルタイムに光となって見えます。声をかけて相手の指をリードしてください。</div>
+        </div>
+    </div>
+
+    <!-- 3. ゲーム画面（描く側・見る側共通） -->
+    <div id="screen-game" class="screen">
+        <div class="header">
+            <span id="role-badge" class="status-badge">役割</span>
+            <div id="game-status" style="margin-top: 5px; font-size: 0.9rem; color: #aaa;">ペア接続中...</div>
+        </div>
+        <div class="canvas-container">
+            <canvas id="game-canvas"></canvas>
+            <div id="game-hint-text" class="game-hint">画面に触れて絵を描いてください</div>
+        </div>
+        <button class="btn" id="finish-btn" style="display:none;" onclick="finishGame()">描き終わった！ (完成へ)</button>
+    </div>
+
+    <!-- 4. 詩（クリア）画面 -->
+    <div id="screen-clear" class="screen">
+        <h2 style="color: #ffeb3b; margin-bottom: 15px;">完結する生命</h2>
+        <div class="poem-box">
+            生命は<br>
+            自分自身だけでは完結できないように<br>
+            つくられているらしい<br>
+            <br>
+            花も<br>
+            めしべとおしべが揃っているだけでは不充分で<br>
+            <span class="poem-highlight">虫や風が訪れて</span><br>
+            <span class="poem-highlight">めしべとおしべを仲立ちする</span><br>
+            <br>
+            生命は<br>
+            <span class="poem-highlight">その中に欠如を抱き</span><br>
+            <span class="poem-highlight">それを他者から満たしてもらうのだ</span>
+        </div>
+        <p class="clear-desc">
+            目も見えず、耳も聞こえない世界に閉じ込められた福島智さんを救ったのは、指先に触れて言葉を伝えてくれた「友」と、その「ことば（コミュニケーションの経験）」という光でした。<br>
+            <br>
+            <strong>不完全な私たちが、お互いを満たし合う。</strong><br>
+            さあ、これから福島さんの紡ぐ『ことばは光』を読んでいきましょう。
+        </p>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Realtime Database の同期に必要) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // ==========================================
+    // 🛠️ Firebase 設定プレースホルダー
+    // ==========================================
+    // 授業等で実際に2台で同期する場合は、ご自身の Firebase 
+    // プロジェクトから設定情報を取得し、以下を書き換えてください。
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    let db;
+    let isOnlineMode = false;
+    let roomNum = "";
+    let myRole = ""; // 'drawer' or 'viewer'
+    
+    // Canvas & 描画関係
+    let canvas, ctx;
+    let isDrawing = false;
+    let lastX = 0, lastY = 0;
+
+    // グローバル関数として公開
+    window.startOnlineMode = function() {
+        const roomInput = document.getElementById('room-id').value;
+        if (!roomInput || roomInput.length < 3) {
+            alert("3桁のルーム番号を入力してください。");
+            return;
+        }
+        roomNum = roomInput;
+        
+        if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+            alert("Firebaseの設定がデフォルトのままです。お試しになる場合は「1台で試す（デモモード）」ボタンをご利用いただくか、コード内のfirebaseConfigを書き換えてください。");
+            return;
+        }
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            isOnlineMode = true;
+            nextScreen('screen-setup', 'screen-role');
+        } catch (e) {
+            alert("Firebaseの接続に失敗しました: " + e.message);
+        }
+    }
+
+    // 次の画面へのナビゲーション
+    function nextScreen(curr, next) {
+        document.getElementById(curr).classList.remove('active');
+        document.getElementById(next).classList.add('active');
+    }
+
+    // 役割決定
+    window.selectRole = function(role) {
+        myRole = role;
+        nextScreen('screen-role', 'screen-game');
+        initGame();
+    }
+
+    // ------------------------------------------
+    // 🕹️ ゲームの初期化と描画処理
+    // ------------------------------------------
+    function initGame() {
+        canvas = document.getElementById('game-canvas');
+        ctx = canvas.getContext('2d');
+        resizeCanvas();
+
+        const badge = document.getElementById('role-badge');
+        const status = document.getElementById('game-status');
+        const hintText = document.getElementById('game-hint-text');
+
+        if (myRole === 'drawer') {
+            badge.innerText = "暗闇 (描く人)";
+            badge.className = "status-badge status-drawer";
+            status.innerText = "画面上には何も見えません。ペアに指示をもらいながらお題を描いてください。";
+            hintText.innerText = "お題：【ハート】を描いてみよう";
+            hintText.className = "game-hint drawer-hint";
+            document.getElementById('finish-btn').style.display = 'block'; // 描く側に終了ボタン
+        } else {
+            badge.innerText = "光 (見る人)";
+            badge.className = "status-badge status-viewer";
+            status.innerText = "相手が手探りで描いた軌跡が見えています。";
+            hintText.innerText = "「もう少し右！」「そこでストップ！」と声をかけてリードしてください。";
+            hintText.className = "game-hint viewer-hint";
+        }
+
+        setupDrawEvents();
+
+        if (isOnlineMode) {
+            listenForFirebaseDrawData();
+        }
+    }
+
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // 描画イベント設定（マウス＆タッチ対応）
+    function setupDrawEvents() {
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches.clientX : e.clientX;
+            const clientY = e.touches ? e.touches.clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        };
+
+        const onStart = (e) => {
+            if (myRole !== 'drawer') return; // 描く人だけがドラッグ可能
+            isDrawing = true;
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            sendDrawData('start', pos.x, pos.y);
+            triggerRipple(pos.x, pos.y); // 描く側には波紋（触感）フィードバックだけを残す
+        };
+
+        const onMove = (e) => {
+            if (!isDrawing || myRole !== 'drawer') return;
+            const pos = getPos(e);
+            sendDrawData('move', pos.x, pos.y);
+            lastX = pos.x;
+            lastY = pos.y;
+        };
+
+        const onEnd = () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            sendDrawData('end', 0, 0);
+        };
+
+        canvas.addEventListener('mousedown', onStart);
+        canvas.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onStart(e); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onMove(e); });
+        window.addEventListener('touchend', onEnd);
+    }
+
+    // 描く人のタッチした場所に「波紋」が広がる（失明時の潮騒や点字の触感イメージ）
+    function triggerRipple(x, y) {
+        let r = 0;
+        const maxR = 35;
+        function animate() {
+            if (r > maxR) return;
+            // 描く側のキャンバスを毎回少しフェードアウトさせて闇に戻す
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 235, 59, ${1 - r/maxR})`; // 柔らかな黄色の波紋
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            r += 2.5;
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
+    // データの送信（Firebase、またはローカルデモ用）
+    function sendDrawData(state, x, y) {
+        const ratioX = x / canvas.width;  // 端末ごとの画面サイズ差を吸収するために比率で送る
+        const ratioY = y / canvas.height;
+
+        if (isOnlineMode) {
+            set(ref(db, `rooms/${roomNum}/stroke`), {
+                state: state,
+                rx: ratioX,
+                ry: ratioY,
+                time: Date.now()
+            });
+        } else {
+            // ローカルデモモード時のイベント発火
+            const event = new CustomEvent('demo-draw', { detail: { state, rx: ratioX, ry: ratioY } });
+            window.dispatchEvent(event);
+        }
+    }
+
+    // データの受信と「見る人」のキャンバスへの描画
+    function listenForFirebaseDrawData() {
+        const strokeRef = ref(db, `rooms/${roomNum}/stroke`);
+        
+        onValue(strokeRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            // 見る人だけが描画する
+            if (myRole === 'viewer') {
+                drawReceivedStroke(data.state, data.rx, data.ry);
+            }
+        });
+
+        // 終了検知の監視
+        const statusRef = ref(db, `rooms/${roomNum}/status`);
+        onValue(statusRef, (snapshot) => {
+            if (snapshot.val() === 'finished') {
+                nextScreen('screen-game', 'screen-clear');
+            }
+        });
+    }
+
+    function drawReceivedStroke(state, rx, ry) {
+        const x = rx * canvas.width;
+        const y = ry * canvas.height;
+
+        if (state === 'start') {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            lastX = x;
+            lastY = y;
+        } else if (state === 'move') {
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = '#ffeb3b'; // 温かい光の黄色
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ff9800'; // ネオンのような光の輝き
+            ctx.stroke();
+            lastX = x;
+            lastY = y;
+        } else if (state === 'end') {
+            ctx.shadowBlur = 0; // シャドウのリセット
+        }
+    }
+
+    // 完成ボタン
+    window.finishGame = function() {
+        if (isOnlineMode) {
+            set(ref(db, `rooms/${roomNum}/status`), 'finished');
+        } else {
+            nextScreen('screen-game', 'screen-clear');
+        }
+    }
+
+    // ------------------------------------------
+    // 💻 1台デモモード（画面を半分に割って隣を疑似体験）
+    // ------------------------------------------
+    window.startDemoMode = function() {
+        // レイアウトを「画面分割」へ切り替え
+        const app = document.getElementById('app');
+        app.classList.add('demo-layout');
+        app.innerHTML = `
+            <!-- 左半分：描く人（暗闇） -->
+            <div class="demo-pane" style="background-color: #050505;">
+                <div class="status-badge status-drawer" style="align-self: flex-start;">暗闇（自分：描く側）</div>
+                <div style="font-size:0.85rem; color:#aaa; margin:10px 0;">画面をなぞってください。あなたの線は見えません。</div>
+                <div class="canvas-container">
+                    <canvas id="canvas-drawer"></canvas>
+                    <div class="game-hint drawer-hint">ここに【ハート】を描いて</div>
+                </div>
+                <button class="btn" onclick="finishGame()">完成ボタン</button>
+            </div>
+            <!-- 右半分：見る人（光） -->
+            <div class="demo-pane" style="background-color: #111; border-left:2px solid #333;">
+                <div class="status-badge status-viewer" style="align-self: flex-start;">光（相手：見る側）</div>
+                <div style="font-size:0.85rem; color:#aaa; margin:10px 0;">左の画面で描かれた線が、リアルタイムに光となって見えます。</div>
+                <div class="canvas-container">
+                    <canvas id="canvas-viewer"></canvas>
+                </div>
+                <div style="height: 55px;"></div>
+            </div>
+        `;
+
+        // 両キャンバス初期化
+        const cD = document.getElementById('canvas-drawer');
+        const cV = document.getElementById('canvas-viewer');
+        const ctxD = cD.getContext('2d');
+        const ctxV = cV.getContext('2d');
+
+        const resizeDemo = () => {
+            cD.width = cD.parentElement.clientWidth;
+            cD.height = cD.parentElement.clientHeight;
+            cV.width = cV.parentElement.clientWidth;
+            cV.height = cV.parentElement.clientHeight;
+            ctxD.fillStyle = '#000000';
+            ctxD.fillRect(0, 0, cD.width, cD.height);
+            ctxV.fillStyle = '#000000';
+            ctxV.fillRect(0, 0, cV.width, cV.height);
+        };
+        resizeDemo();
+
+        // 描画処理
+        let isDemoDrawing = false;
+        let dLastX = 0, dLastY = 0;
+        let vLastX = 0, vLastY = 0;
+
+        const getDemoPos = (e) => {
+            const rect = cD.getBoundingClientRect();
+            const clientX = e.touches ? e.touches.clientX : e.clientX;
+            const clientY = e.touches ? e.touches.clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        };
+
+        const drawRippleDemo = (x, y) => {
+            let r = 0;
+            function anim() {
+                if(r > 30) return;
+                ctxD.fillStyle = 'rgba(0,0,0,0.1)';
+                ctxD.fillRect(0, 0, cD.width, cD.height);
+                ctxD.beginPath();
+                ctxD.arc(x, y, r, 0, Math.PI * 2);
+                ctxD.strokeStyle = `rgba(255, 235, 59, ${1 - r/30})`;
+                ctxD.stroke();
+                r += 2;
+                requestAnimationFrame(anim);
+            }
+            anim();
+        }
+
+        cD.addEventListener('mousedown', (e) => {
+            isDemoDrawing = true;
+            const pos = getDemoPos(e);
+            dLastX = pos.x; dLastY = pos.y;
+            
+            // 右側の開始
+            const rx = pos.x / cD.width;
+            const ry = pos.y / cD.height;
+            vLastX = rx * cV.width;
+            vLastY = ry * cV.height;
+            ctxV.beginPath();
+            ctxV.moveTo(vLastX, vLastY);
+
+            drawRippleDemo(pos.x, pos.y);
+        });
+
+        cD.addEventListener('mousemove', (e) => {
+            if(!isDemoDrawing) return;
+            const pos = getDemoPos(e);
+            
+            // 右側の描画
+            const rx = pos.x / cD.width;
+            const ry = pos.y / cV.height;
+            const vx = rx * cV.width;
+            const vy = ry * cV.height;
+            
+            ctxV.beginPath();
+            ctxV.moveTo(vLastX, vLastY);
+            ctxV.lineTo(vx, vy);
+            ctxV.strokeStyle = '#ffeb3b';
+            ctxV.lineWidth = 4;
+            ctxV.lineCap = 'round';
+            ctxV.shadowBlur = 8;
+            ctxV.shadowColor = '#ff9800';
+            ctxV.stroke();
+            
+            vLastX = vx;
+            vLastY = vy;
+            dLastX = pos.x;
+            dLastY = pos.y;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDemoDrawing = false;
+            ctxV.shadowBlur = 0;
+        });
+    }
+</script>
+
+</body>
+</html>
