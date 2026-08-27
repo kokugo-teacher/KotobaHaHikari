@@ -121,20 +121,17 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.8); line-height: 1.5;
         }
         .drawer-hint { color: #ff5252; font-size: 2rem; font-weight: bold; }
-        .viewer-hint {
-    color: #ffeb3b;
-    font-size: 3.5rem;
+.viewer-hint {
+    color: #ffffff;
+    font-size: 1.5rem;
     font-weight: bold;
     line-height: 1.6;
-    text-shadow:
-        0 0 10px #ffeb3b,
-        0 0 20px #ff9800,
-        0 0 40px #ff9800;
     background: rgba(0,0,0,0.65);
-    padding: 30px;
+    padding: 20px;
     border-radius: 20px;
     width: 95%;
 }
+``
 
         /* 詩（クリア）画面 */
         #screen-clear { justify-content: center; align-items: center; text-align: center; }
@@ -418,24 +415,36 @@ hintText.innerText =
             badge.innerText = "光 (見る人)";
             badge.className = "status-badge status-viewer";
             status.innerText = "相手が手探りで描いた軌跡が見えています。";
-hintText.innerText =
-`★★★ お題 ★★★
-
+hintText.innerHTML =
+`<div style="
+font-size:3rem;
+color:#ffeb3b;
+text-shadow:
+0 0 10px #ffeb3b,
+0 0 20px #ff9800,
+0 0 40px #ff9800;
+margin-bottom:20px;
+">
 【 ${theme} 】
+</div>
 
-〈ルール〉
-お題が相手にバレないようにする
+<div style="font-size:1.3rem;color:white;">
 
-〈目標〉
-二人でお題の絵を完成させる
+〈ルール〉<br>
+お題が相手にバレないようにする<br><br>
 
-〈やり方〉
-相手が描く線を見ながら、
+〈目標〉<br>
+二人でお題の絵を完成させる<br><br>
 
-「まずまっすぐな線😅」
-「もう少し上😡」
+〈やり方〉<br>
+相手が描く線を見ながら、<br><br>
 
-などと言葉で誘導しましょう。`;
+「まずまっすぐな線！」<br>
+「もう少し上！」<br><br>
+
+などと言葉で誘導しましょう。
+
+</div>`;
 
             hintText.className = "game-hint viewer-hint";
         }
