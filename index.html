@@ -246,6 +246,45 @@
         </div>
     </div>
 
+<!-- 3. ルール説明画面 -->
+<div id="screen-rule" class="screen">
+
+    <div style="
+        flex:1;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+        text-align:center;
+        padding:20px;
+    ">
+
+        <h2 style="
+            color:#ffeb3b;
+            font-size:3rem;
+            margin-bottom:30px;
+        ">
+            ルール説明
+        </h2>
+
+        <div id="rule-text"
+        style="
+            font-size:1.5rem;
+            line-height:1.8;
+            color:#ddd;
+        ">
+        </div>
+
+    </div>
+
+    <button
+        class="btn"
+        onclick="startActualGame()">
+        ゲームスタート
+    </button>
+
+</div>
+
     <!-- 3. ゲーム画面（描く側・見る側共通） -->
     <div id="screen-game" class="screen">
 
@@ -405,8 +444,7 @@ const theme =
             badge.className = "status-badge status-drawer";
             status.innerText = "画面上には何も見えません。ペアに指示をもらいながらお題を描いてください。";
 
-hintText.innerText =
-"ペアの指示を聞きながら描こう";
+hintText.innerText = "";
 
             hintText.className = "game-hint drawer-hint";
         } else {
@@ -415,35 +453,19 @@ hintText.innerText =
             badge.className = "status-badge status-viewer";
             status.innerText = "相手が手探りで描いた軌跡が見えています。";
 hintText.innerHTML =
-`<div style="
+`
+<div style="
 font-size:3rem;
 color:#ffeb3b;
+font-weight:900;
 text-shadow:
 0 0 10px #ffeb3b,
 0 0 20px #ff9800,
 0 0 40px #ff9800;
-margin-bottom:20px;
 ">
 お題：【${theme}】
 </div>
-
-<div style="font-size:1.1rem;color:rgba(255,255,255,0.45);">
-
-〈ルール〉<br>
-お題が相手にバレないようにする<br><br>
-
-〈目標〉<br>
-二人でお題の絵を完成させる<br><br>
-
-〈やり方〉<br>
-相手が描く線を見ながら、<br><br>
-
-「まずまっすぐな線！」<br>
-「もう少し上！」<br><br>
-
-などと言葉で誘導しましょう。
-
-</div>`;
+`;
 
             hintText.className = "game-hint viewer-hint";
         }
@@ -462,6 +484,23 @@ if (isOnlineMode) {
     listenForFirebaseDrawData();
 }
 
+}
+
+window.startActualGame = function(){
+
+    nextScreen(
+        "screen-rule",
+        "screen-game"
+    );
+
+    document.querySelector(".canvas-container")
+        .style.opacity = "1";
+
+    if(myRole === "drawer"){
+
+        document.getElementById("game-canvas")
+            .style.pointerEvents = "auto";
+    }
 }
 
 function registerPlayer() {
@@ -492,20 +531,46 @@ document.getElementById("loading-status").innerText =
 
 if(playerCount >= 2){
 
-    document.getElementById("loading-screen")
-    .style.display = "none";
+document.getElementById("loading-screen")
+.style.display = "none";
 
-    document.getElementById("game-status").innerText =
-        "ペア接続完了";
+nextScreen(
+    "screen-game",
+    "screen-rule"
+);
 
-    document
-        .querySelector(".canvas-container")
-        .style.opacity = "1";
+if(myRole === "drawer"){
 
-    if(myRole === "drawer"){
-        document.getElementById("game-canvas")
-            .style.pointerEvents = "auto";
-            }
+    document.getElementById("rule-text").innerHTML =
+    `
+    横の人の指示だけを頼りに、
+    お題の絵を描きましょう。<br><br>
+
+    自分には線が見えません。<br>
+
+    「もう少し右」
+    「そこから下」
+
+    などの言葉を頼りに
+    描いてください。
+    `;
+
+}else{
+
+    document.getElementById("rule-text").innerHTML =
+    `
+    お題が相手にバレないようにしましょう。<br><br>
+
+    相手の描く線を見ながら、<br>
+
+    「もう少し上」
+    「少し左」
+
+    などと言葉で誘導し、
+    二人で絵を完成させましょう。
+    `;
+}
+
 
         }
 
