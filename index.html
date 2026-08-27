@@ -121,7 +121,21 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.8); line-height: 1.5;
         }
         .drawer-hint { color: #ff5252; font-size: 2rem; font-weight: bold; }
-        .viewer-hint { color: #2196f3; font-size: 2rem; font-weight: bold; }
+        .viewer-hint {
+    color: #ffeb3b;
+    font-size: 3.5rem;
+    font-weight: bold;
+    line-height: 1.6;
+    text-shadow:
+        0 0 10px #ffeb3b,
+        0 0 20px #ff9800,
+        0 0 40px #ff9800;
+    background: rgba(0,0,0,0.65);
+    padding: 30px;
+    border-radius: 20px;
+    width: 95%;
+}
+``
 
         /* 詩（クリア）画面 */
         #screen-clear { justify-content: center; align-items: center; text-align: center; }
@@ -374,7 +388,7 @@ const firebaseConfig = {
     // 🕹️ ゲームの初期化と描画処理
     // ------------------------------------------
     function initGame() {
-        const themes = [,
+        const themes = [
     "吉内",
     "自転車",
     "ドラゴン",
@@ -406,16 +420,23 @@ hintText.innerText =
             badge.className = "status-badge status-viewer";
             status.innerText = "相手が手探りで描いた軌跡が見えています。";
             hintText.innerText =
-`お題：【${theme}】
+`★★★ お題 ★★★
 
-お題が相手にバレないように、
+【 ${theme} 】
 
-「もう少し左カナ😅」
-「もう少し上‼️😡😡」
 
-などと声をかけて、
+〈ルール〉お題が相手にバレないようにする。
 
-二人で絵を完成させましょう。`;
+〈目標〉
+二人でお題の絵を完成させましょう。`;
+
+〈やり方
+〉相手が描く線を見ながら、
+「まずまっすぐな線かいて😅」
+「もう少し上‼️😡」
+
+などと声をかけて、相手を誘導しましょう。
+
 
             hintText.className = "game-hint viewer-hint";
         }
